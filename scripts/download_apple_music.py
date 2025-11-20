@@ -6,21 +6,25 @@ cookies.txt file that includes an authenticated Apple Music session.
 """
 
 import asyncio
+from pathlib import Path
 
-from gamdl.api import AppleMusicApi, ItunesApi
-from gamdl.downloader import (
-    AppleMusicBaseDownloader,
-    AppleMusicDownloader,
-    AppleMusicMusicVideoDownloader,
-    AppleMusicSongDownloader,
-    AppleMusicUploadedVideoDownloader,
-)
-from gamdl.interface import (
-    AppleMusicInterface,
-    AppleMusicMusicVideoInterface,
-    AppleMusicSongInterface,
-    AppleMusicUploadedVideoInterface,
-)
+
+def validate_cookies_path(cookies_path: str | Path = "cookies.txt") -> Path:
+    """Ensure the Netscape cookies file exists.
+
+    Raises a :class:`FileNotFoundError` with a helpful message when the cookies
+    file cannot be found. This helper is used by the script and tests to avoid
+    launching real downloads when required inputs are missing.
+    """
+
+    path = Path(cookies_path).resolve()
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Missing Apple Music cookies file at '{path}'. "
+            "Create a Netscape-format cookies.txt export before running downloads."
+        )
+
+    return path
 
 
 async def main() -> None:
@@ -32,8 +36,25 @@ async def main() -> None:
     ``downloader.get_url_info`` to target a different track or video.
     """
 
+    from gamdl.api import AppleMusicApi, ItunesApi
+    from gamdl.downloader import (
+        AppleMusicBaseDownloader,
+        AppleMusicDownloader,
+        AppleMusicMusicVideoDownloader,
+        AppleMusicSongDownloader,
+        AppleMusicUploadedVideoDownloader,
+    )
+    from gamdl.interface import (
+        AppleMusicInterface,
+        AppleMusicMusicVideoInterface,
+        AppleMusicSongInterface,
+        AppleMusicUploadedVideoInterface,
+    )
+
     # Initialize APIs
-    apple_music_api = AppleMusicApi.from_netscape_cookies(cookies_path="cookies.txt")
+    cookies_path = validate_cookies_path()
+
+    apple_music_api = AppleMusicApi.from_netscape_cookies(cookies_path=str(cookies_path))
     await apple_music_api.setup()
 
     itunes_api = ItunesApi(
